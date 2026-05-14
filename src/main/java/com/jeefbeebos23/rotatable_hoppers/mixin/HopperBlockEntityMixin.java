@@ -12,6 +12,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -56,7 +57,7 @@ public class HopperBlockEntityMixin {
 
         @Nullable Inventory inventory = HopperBlockEntity.getInventoryAt(world, targetPos);
         if (inventory != null) {
-            Direction extractSide = Direction.DOWN;
+            Direction extractSide = pullFrom.getOpposite();
             boolean extracted = false;
             for (int slot : getAvailableSlots(inventory, extractSide)) {
                 if (extract(hopper, inventory, slot, extractSide)) {
@@ -72,6 +73,7 @@ public class HopperBlockEntityMixin {
     }
 
     /** Mirror of the private static helper to get available slots for an inventory side. */
+    @Unique
     private static int[] getAvailableSlots(Inventory inventory, Direction side) {
         if (inventory instanceof SidedInventory sidedInventory) {
             return sidedInventory.getAvailableSlots(side);
