@@ -41,8 +41,7 @@ public class BlockBehaviourMixin {
             case NORTH -> Direction.EAST;
             case EAST  -> Direction.SOUTH;
             case SOUTH -> Direction.WEST;
-            case WEST  -> Direction.UP;
-            case UP    -> Direction.DOWN;
+            default    -> Direction.DOWN;
         };
     }
 }
