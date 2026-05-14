@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.jeefbeebos23.rotatable_hoppers.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "HopperBlockMixin",
+    "HopperBlockEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

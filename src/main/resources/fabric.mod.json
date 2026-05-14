@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "rotatable_hoppers",
+  "version": "${version}",
+  "name": "Rotatable Hoppers",
+  "description": "Right-click any hopper with a pickaxe to rotate it in all 6 directions.",
+  "authors": ["jeefbeebos23"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.jeefbeebos23.rotatable_hoppers.RotatableHoppers"]
+  },
+  "mixins": ["rotatable_hoppers.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4"
+  }
+}
