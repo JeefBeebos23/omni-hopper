@@ -1,18 +1,16 @@
 package com.jeefbeebos23.rotatable_hoppers.mixin;
 
-import net.minecraft.block.HopperBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.HopperBlockEntity;
-import net.minecraft.block.entity.Hopper;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SidedInventory;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.Container;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HopperBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.Hopper;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -20,67 +18,55 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(HopperBlockEntity.class)
 public class HopperBlockEntityMixin {
 
-    /**
-     * Shadow the private static extract(Hopper, Inventory, int, Direction) helper
-     * so we can call it from our injection without reflection.
-     */
     @Shadow
-    private static boolean extract(Hopper hopper, Inventory inventory, int slot, Direction side) {
+    private static boolean tryTakeInItemFromSlot(Hopper hopper, Container container, int slot, Direction side) {
+        throw new AssertionError("mixin shadow");
+    }
+
+    @Shadow
+    private static int[] getSlots(Container container, Direction side) {
         throw new AssertionError("mixin shadow");
     }
 
     /**
      * Redirect the hopper's pull direction from always-above to facing.getOpposite().
      *
-     * Vanilla extract(World, Hopper) hardcodes blockPos = Y+1 (above the hopper).
-     * We inject at HEAD (cancellable) and re-run the extraction logic using
-     * facing.getOpposite() so that:
-     *   - FACING=DOWN  → opposite=UP  → pulls from above  (vanilla behaviour)
-     *   - FACING=NORTH → opposite=SOUTH → pulls from south
-     *   - etc.
-     *
-     * getInventoryAt(World, BlockPos) is public static, so no @Shadow needed.
+     * Vanilla suckInItems hardcodes Y+1 (above the hopper) as the pull source.
+     * For FACING=DOWN we let vanilla run (handles item entities above too).
+     * For all other facings we cancel and pull from facing.getOpposite() instead.
      */
-    @Inject(method = "extract(Lnet/minecraft/world/World;Lnet/minecraft/block/entity/Hopper;)Z",
+    @Inject(method = "suckInItems(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/block/entity/Hopper;)Z",
             at = @At("HEAD"), cancellable = true)
-    private static void redirectPullDirection(World world, Hopper hopper,
+    private static void redirectPullDirection(Level level, Hopper hopper,
                                               CallbackInfoReturnable<Boolean> cir) {
-        // Only redirect when the hopper is a block entity (i.e. placed in the world).
         if (!(hopper instanceof BlockEntity be)) return;
 
-        BlockPos pos = be.getPos();
-        Direction facing = world.getBlockState(pos).get(HopperBlock.FACING);
+        BlockPos pos = be.getBlockPos();
+        Direction facing = level.getBlockState(pos).getValue(HopperBlock.FACING);
 
-        // For FACING=DOWN (vanilla default), opposite=UP — identical to vanilla.
+        // For FACING=DOWN (vanilla default) let vanilla run: pulls from above (block + item entities).
+        if (facing == Direction.DOWN) return;
+
         Direction pullFrom = facing.getOpposite();
-        BlockPos targetPos = pos.offset(pullFrom);
+        BlockPos targetPos = pos.relative(pullFrom);
 
-        @Nullable Inventory inventory = HopperBlockEntity.getInventoryAt(world, targetPos);
-        if (inventory != null) {
-            Direction extractSide = pullFrom.getOpposite();
-            boolean extracted = false;
-            for (int slot : getAvailableSlots(inventory, extractSide)) {
-                if (extract(hopper, inventory, slot, extractSide)) {
-                    extracted = true;
-                    break;
-                }
-            }
-            cir.setReturnValue(extracted);
+        @Nullable Container container = HopperBlockEntity.getContainerAt(level, targetPos);
+        if (container == null) {
+            cir.setReturnValue(false);
             cir.cancel();
+            return;
         }
-        // No block inventory at that side — do NOT cancel; let vanilla continue
-        // so that item entities above the hopper can still be picked up.
-    }
 
-    /** Mirror of the private static helper to get available slots for an inventory side. */
-    @Unique
-    private static int[] getAvailableSlots(Inventory inventory, Direction side) {
-        if (inventory instanceof SidedInventory sidedInventory) {
-            return sidedInventory.getAvailableSlots(side);
+        // extractSide = the face of the source container through which items exit toward the hopper = facing
+        Direction extractSide = facing;
+        boolean extracted = false;
+        for (int slot : getSlots(container, extractSide)) {
+            if (tryTakeInItemFromSlot(hopper, container, slot, extractSide)) {
+                extracted = true;
+                break;
+            }
         }
-        int size = inventory.size();
-        int[] slots = new int[size];
-        for (int i = 0; i < size; i++) slots[i] = i;
-        return slots;
+        cir.setReturnValue(extracted);
+        cir.cancel();
     }
 }

@@ -1,17 +1,17 @@
 package com.jeefbeebos23.rotatable_hoppers.mixin;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.HopperBlock;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.PickaxeItem;
-import net.minecraft.state.property.EnumProperty;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HopperBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -30,21 +30,21 @@ public class HopperBlockMixin {
     // Replace FACING after vanilla's static initializer sets it, adding Direction.UP.
     @Inject(method = "<clinit>", at = @At("TAIL"))
     private static void addUpDirection(CallbackInfo ci) {
-        FACING = EnumProperty.of("facing", Direction.class,
+        FACING = EnumProperty.create("facing", Direction.class,
             Direction.DOWN, Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.UP);
     }
 
     // Intercept right-click with any pickaxe to cycle the hopper's facing direction.
-    @Inject(method = "onUseWithItem", at = @At("HEAD"), cancellable = true)
-    private void rotateFacing(ItemStack stack, BlockState state, World world, BlockPos pos,
-                               PlayerEntity player, Hand hand, BlockHitResult hit,
-                               CallbackInfoReturnable<ActionResult> cir) {
-        if (!(stack.getItem() instanceof PickaxeItem)) return;
-        if (!world.isClient()) {
-            Direction next = nextFacing(state.get(HopperBlock.FACING));
-            world.setBlockState(pos, state.with(HopperBlock.FACING, next));
+    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
+    private void rotateFacing(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                               Player player, InteractionHand hand, BlockHitResult hit,
+                               CallbackInfoReturnable<InteractionResult> cir) {
+        if (!stack.is(ItemTags.PICKAXES)) return;
+        if (!level.isClientSide()) {
+            Direction next = nextFacing(state.getValue(HopperBlock.FACING));
+            level.setBlock(pos, state.setValue(HopperBlock.FACING, next), 3);
         }
-        cir.setReturnValue(world.isClient() ? ActionResult.SUCCESS : ActionResult.SUCCESS_SERVER);
+        cir.setReturnValue(level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER);
         cir.cancel();
     }
 

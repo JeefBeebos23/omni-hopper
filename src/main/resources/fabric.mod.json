@@ -12,8 +12,8 @@
   },
   "mixins": ["rotatable_hoppers.mixins.json"],
   "depends": {
-    "fabricloader": ">=0.16.0",
+    "fabricloader": ">=0.19.0",
     "fabric-api": "*",
-    "minecraft": "~1.21.4"
+    "minecraft": "~26.1.2"
   }
 }
