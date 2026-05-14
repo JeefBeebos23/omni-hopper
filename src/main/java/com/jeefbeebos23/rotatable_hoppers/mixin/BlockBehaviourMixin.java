@@ -1,5 +1,6 @@
 package com.jeefbeebos23.rotatable_hoppers.mixin;
 
+import com.jeefbeebos23.rotatable_hoppers.HopperProperties;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.ItemTags;
@@ -28,9 +29,9 @@ public class BlockBehaviourMixin {
 
         if (stack.is(ItemTags.PICKAXES)) {
             if (!level.isClientSide()) {
-                Direction newInput = cycle(state.getValue(HopperBlockMixin.INPUT_FACING));
+                Direction newInput = cycle(state.getValue(HopperProperties.INPUT_FACING));
                 level.setBlock(pos, state
-                    .setValue(HopperBlockMixin.INPUT_FACING, newInput)
+                    .setValue(HopperProperties.INPUT_FACING, newInput)
                     .setValue(HopperBlock.FACING, newInput.getOpposite()), 3);
             }
             cir.setReturnValue(level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER);

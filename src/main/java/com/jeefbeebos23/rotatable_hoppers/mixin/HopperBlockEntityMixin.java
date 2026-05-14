@@ -1,5 +1,6 @@
 package com.jeefbeebos23.rotatable_hoppers.mixin;
 
+import com.jeefbeebos23.rotatable_hoppers.HopperProperties;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
@@ -35,7 +36,7 @@ public class HopperBlockEntityMixin {
 
         BlockPos pos = be.getBlockPos();
         BlockState state = level.getBlockState(pos);
-        Direction inputFacing = state.getValue(HopperBlockMixin.INPUT_FACING);
+        Direction inputFacing = state.getValue(HopperProperties.INPUT_FACING);
 
         if (inputFacing == Direction.UP) return;
 
