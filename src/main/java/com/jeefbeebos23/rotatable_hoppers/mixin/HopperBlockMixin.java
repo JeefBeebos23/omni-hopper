@@ -45,6 +45,7 @@ public class HopperBlockMixin {
             world.setBlockState(pos, state.with(HopperBlock.FACING, next));
         }
         cir.setReturnValue(world.isClient() ? ActionResult.SUCCESS : ActionResult.SUCCESS_SERVER);
+        cir.cancel();
     }
 
     private static Direction nextFacing(Direction d) {
