@@ -39,7 +39,11 @@ public class BlockBehaviourMixin {
 
         } else if (stack.is(ItemTags.AXES)) {
             if (!level.isClientSide()) {
+                Direction inputDir = state.getValue(HopperProperties.INPUT_FACING);
                 Direction newOutput = cycle(state.getValue(HopperBlock.FACING));
+                while (newOutput == inputDir) {
+                    newOutput = cycle(newOutput);
+                }
                 level.setBlock(pos, state.setValue(HopperBlock.FACING, newOutput), 3);
             }
             cir.setReturnValue(level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER);
